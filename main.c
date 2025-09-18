@@ -5,10 +5,11 @@
 #define PAGE_SIZE 4096
 #define HEAP_SIZE 2048
 
-size_t s_size;
+size_t S_SIZE;
 void *start = NULL;
-void *tail, *last_free;
-
+void *tail;
+void *last_free[HEAP_SIZE];
+unsigned int last_free_index = 0;
 
 typedef struct{
   int x;
@@ -30,7 +31,7 @@ void *_sas_init(void){
   }
   start = s;
   tail = s;
-  last_free = s;
+  last_free[last_free_index] = s;
   return s;
 }
 
@@ -39,16 +40,15 @@ void *_sas_init(void){
 void *sas_alloc(void){
   if(start == NULL)
     start = _sas_init();
-
   
-  if(tail == last_free){
-    if(tail == start+HEAP_SIZE){
+  if(tail == last_free[last_free_index]){
+    if(tail == (start+HEAP_SIZE)-S_SIZE){
       printf("MEMORY ERROR: out of memory\n");
       exit(1);
     }
     void *result = tail;
-    tail += s_size;
-    last_free = tail;
+    tail += S_SIZE;
+    last_free[last_free_index] = tail;
     return result;
   }else{
     printf("NOT YET IMPLEMENTED");
@@ -59,7 +59,7 @@ void *sas_alloc(void){
 
 
 int main(){
-  s_size = sizeof(test_struct);
+  S_SIZE = sizeof(test_struct);
   test_struct *m = sas_alloc();
   printf("%p\n", m);
   test_struct *n = sas_alloc();
