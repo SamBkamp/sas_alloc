@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define PAGE_SIZE 4096
 #define HEAP_SIZE 2048
@@ -21,8 +21,8 @@ typedef struct{
 void *sas_init(void){
 
   if(start != NULL){
-    printf("MEMORY ERROR: double sas_init()\n");
-    exit(1);
+    fprintf(stderr, "MEMORY ERROR: 'double sas_init()\n");
+    _exit(1);
   }  
   
   void *s = mmap(NULL, PAGE_SIZE, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANON, -1, 0);
@@ -53,7 +53,6 @@ void *sas_alloc(void){
     return result;
   }else{
     printf("NOT YET IMPLEMENTED");
-    exit(1);
   }
 }
 
