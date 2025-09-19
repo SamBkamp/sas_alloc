@@ -18,7 +18,5 @@ int main(){
   printf("%p\n", l);
   sas_free(m);
   sas_free(n);
-
-  sas_free((void *)-1);
   
 }
