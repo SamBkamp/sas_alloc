@@ -36,6 +36,7 @@ void *sas_init(void){
 
   if(s == MAP_FAILED){
     perror("sas_init error");
+    _exit(1);
   }
   start = s;
   tail = s;
@@ -53,6 +54,7 @@ void *sas_alloc(void){
     if(tail == (start+HEAP_SIZE)-S_SIZE){
       errno = ENOMEM;
       perror("sas_alloc error");
+      _exit(1);
     }
     void *result = tail;
     tail += S_SIZE;
@@ -67,6 +69,7 @@ void sas_free(void *ptr){
   if(ptr > tail || ptr < start || (ptr-start) % S_SIZE != 0){
     errno = EFAULT;
     perror("sas_free error");
+    _exit(1);
   }
   last_free[++last_free_index] = ptr;
 }
