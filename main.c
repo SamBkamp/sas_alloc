@@ -56,6 +56,13 @@ void *sas_alloc(void){
   }
 }
 
+void sas_free(void *ptr){
+  if(ptr > tail || ptr < start || (ptr-start) % S_SIZE != 0){
+    printf("MEMORY ERROR: invalid free()\n");
+    exit(1);
+  }
+}
+
 
 
 int main(){
@@ -67,4 +74,8 @@ int main(){
 
   n->x = 7;
   printf("%d\n", n->x);
+
+  printf("%p\n", m);
+  printf("%p\n", (char*)m+1);
+  sas_free((char*)m+1);
 }
