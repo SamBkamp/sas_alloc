@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #define PAGE_SIZE 4096
 #define HEAP_SIZE 2048
@@ -43,8 +44,8 @@ void *sas_alloc(void){
   
   if(tail == last_free[last_free_index]){
     if(tail == (start+HEAP_SIZE)-S_SIZE){
-      printf("MEMORY ERROR: out of memory\n");
-      exit(1);
+      errno = ENOMEM;
+      perror("sas_alloc error");
     }
     void *result = tail;
     tail += S_SIZE;
@@ -58,8 +59,8 @@ void *sas_alloc(void){
 
 void sas_free(void *ptr){
   if(ptr > tail || ptr < start || (ptr-start) % S_SIZE != 0){
-    printf("MEMORY ERROR: invalid free()\n");
-    exit(1);
+    errno = EFAULT;
+    perror("sas_free error");
   }
 }
 
