@@ -7,10 +7,15 @@
 #define PAGE_SIZE 4096
 #define HEAP_SIZE 2048
 
+size_t S_SIZE;
 void *start = NULL;
 void *tail;
 void *last_free[HEAP_SIZE];
 unsigned int last_free_index = 0;
+
+void sas_set_size(size_t s){
+  S_SIZE = s;
+}
 
 //internal function that allocates memory with mmap
 void *sas_init(void){

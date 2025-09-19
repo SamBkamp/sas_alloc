@@ -9,7 +9,7 @@ typedef struct{
 
 
 int main(){
-  S_SIZE = sizeof(test_struct);
+  sas_set_size(sizeof(test_struct));
   test_struct *m = sas_alloc();
   test_struct *n = sas_alloc();
   test_struct *l = sas_alloc();
