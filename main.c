@@ -28,7 +28,7 @@ void *sas_init(void){
   void *s = mmap(NULL, PAGE_SIZE, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANON, -1, 0);
 
   if(s == MAP_FAILED){
-    perror("failed to map memory");
+    perror("sas_init error");
   }
   start = s;
   tail = s;
