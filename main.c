@@ -17,7 +17,7 @@ typedef struct{
 }test_struct;
 
 //internal function that allocates memory with mmap
-void *_sas_init(void){
+void *sas_init(void){
 
   if(start != NULL){
     printf("MEMORY ERROR: double sas_init()\n");
@@ -39,7 +39,7 @@ void *_sas_init(void){
 //returns valid heap address that has space for 1 instance of the struct
 void *sas_alloc(void){
   if(start == NULL)
-    start = _sas_init();
+    start = sas_init();
   
   if(tail == last_free[last_free_index]){
     if(tail == (start+HEAP_SIZE)-S_SIZE){
