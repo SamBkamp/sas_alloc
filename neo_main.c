@@ -11,8 +11,18 @@ typedef struct{
 int main(){
   test_struct *m = sas_alloc();
   test_struct *n = sas_alloc();
-  test_struct *l = sas_alloc();
   printf("%p\n", m);
-  printf("%p\n", n);
-  printf("%p\n", l);
+  printf("%p\n\n", n);
+  sas_free(m);
+  sas_free(n);
+  test_struct *b = sas_alloc();
+  test_struct *t = sas_alloc();
+  test_struct *l = sas_alloc();
+  printf("%p\n", b);
+  printf("%p\n", t);
+  printf("%p\n\n", l);
+  sas_free(t);
+  test_struct *o = sas_alloc();
+  printf("%p\n", o);
 }
+

@@ -8,7 +8,7 @@
 
 
 typedef struct{
-  short flags;
+  signed short flags;
 }chunk_struct;
 
 
@@ -47,13 +47,19 @@ void *sas_alloc(void){
       perror("sas_alloc error");
       _exit(1);
     }
-    void *result = tail + sizeof(chunk_struct);
+    tail->flags = 1;
+    void *result = (void *)tail + sizeof(chunk_struct);
     tail = (void *)tail + S_SIZE + sizeof(chunk_struct);
     last_free = tail;
     return (void *)result;
   }else{
+    last_free->flags = 1;
     void *result = (void *)last_free;
-    last_free = tail;
+    void *new_last_free = result;
+    while(new_last_free < (void *)tail && ((chunk_struct *)new_last_free)->flags != -1){
+      new_last_free += (S_SIZE + sizeof(chunk_struct));
+    }
+    last_free = new_last_free;
     return result+sizeof(chunk_struct);
   }
 }
@@ -65,10 +71,12 @@ void sas_free(void *ptr){
    if(ptr > (void *)tail ||
       ptr < (void *)start ||
       (ptr-sizeof(chunk_struct)-(void *)start) % (S_SIZE+sizeof(chunk_struct)) != 0){
-    errno = EFAULT;
-    perror("sas_free error");
-    _exit(1);
-  }
-  last_free = (chunk_struct *)(ptr-sizeof(chunk_struct));
-  last_free->flags = last_free->flags | 0x80;
+     errno = EFAULT;
+     perror("sas_free error");
+     _exit(1);
+   }
+   if((void *)last_free > ptr-sizeof(chunk_struct))//only store the earliest free location in heap
+     last_free = (chunk_struct *)(ptr-sizeof(chunk_struct));
+   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags = -1;
+
 }
