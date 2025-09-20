@@ -5,12 +5,11 @@
 #include "sas_alloc.h"
 
 #define PAGE_SIZE 4096
-#define HEAP_SIZE 2048
 
 size_t S_SIZE = 0;
 void *start = NULL;
 void *tail;
-void *last_free[HEAP_SIZE];
+void *last_free[PAGE_SIZE];
 unsigned int last_free_index = 0;
 
 void sas_set_size(size_t s){
@@ -51,7 +50,7 @@ void *sas_alloc(void){
     start = sas_init();
   
   if(tail == last_free[last_free_index]){
-    if(tail == (start+HEAP_SIZE)-S_SIZE){
+    if(tail == (start+PAGE_SIZE)-S_SIZE){
       errno = ENOMEM;
       perror("sas_alloc error");
       _exit(1);
