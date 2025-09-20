@@ -20,7 +20,6 @@ void sas_set_size(size_t s){
   }else{ 
     S_SIZE = s;
   }
-
 }
 
 //internal function that allocates memory with mmap
@@ -30,7 +29,6 @@ void *sas_init(void){
     fprintf(stderr, "MEMORY ERROR: 'double sas_init()\n");
     _exit(1);
   }  
-  
   void *s = mmap(NULL, PAGE_SIZE, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANON, -1, 0);
 
   if(s == MAP_FAILED){
