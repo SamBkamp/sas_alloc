@@ -1,8 +1,8 @@
 # Sams Struct Allocator
 
-## This is a heap memory allocator for singular types, or types of the same size. Think malloc but faster and less flexible.
+#### This is a heap memory allocator for singular types, or types of the same size. Think malloc but faster and less flexible.
 
-### This allocator is built on the mmap() syscall and *not* on malloc(), bypassing a lot of the computational and storage overhead associated with malloc.
+This allocator is built on the mmap() syscall and *not* on malloc(), bypassing a lot of the computational and storage overhead associated with malloc.
 
 ## function reference:
 
@@ -11,3 +11,7 @@
 `void *sas_alloc()` This function returns a pointer to a space on the heap of size `s` declared above
 
 `void sas_free(void *ptr)` This function frees memory allocated earlier by sas_alloc
+
+## sas_alloc.c vs neo_sas_alloc.c
+
+These are two different implementations of my allocation program. They use the same header file and the same function reference but they are slightly different. `sas_alloc` should be faster but takes up much more memory (nearly twice as much) while `neo_sas_alloc` has more computational overhead but is much more memory optimised (2 bytes (or however big your `short`s are) for every allocated block of memory)
