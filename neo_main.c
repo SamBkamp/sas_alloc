@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "neo_sas_alloc.h"
+#include "sas_alloc.h"
 
 
 typedef struct{
@@ -9,6 +9,7 @@ typedef struct{
 
 
 int main(){
+  sas_set_size(sizeof(test_struct));
   test_struct *m = sas_alloc();
   test_struct *n = sas_alloc();
   printf("%p\n", m);

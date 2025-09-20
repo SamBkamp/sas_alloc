@@ -2,7 +2,7 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <unistd.h>
-#include "neo_sas_alloc.h"
+#include "sas_alloc.h"
 
 #define PAGE_SIZE 4096
 
@@ -11,9 +11,19 @@ typedef struct{
   signed short flags;
 }chunk_struct;
 
-
+size_t S_SIZE = 0;
 chunk_struct *start = NULL;
 chunk_struct *tail, *last_free; 
+
+void sas_set_size(size_t s){
+  if(s <= 0 || S_SIZE != 0){
+    errno = EINVAL;
+    perror("sas_set_size error");
+    _exit(1);
+  }else{ 
+    S_SIZE = s;
+  }
+}
 
 
 //internal function that allocates memory with mmap
