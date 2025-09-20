@@ -9,8 +9,8 @@
 size_t S_SIZE = 0;
 void *start = NULL;
 void *tail;
-void *last_free[PAGE_SIZE];
-unsigned int last_free_index = 0;
+void *last_free[PAGE_SIZE]; //TODO: Find a more memory efficient way to do this
+unsigned short last_free_index = 0;
 
 void sas_set_size(size_t s){
   if(s <= 0 || S_SIZE != 0){
