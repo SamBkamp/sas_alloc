@@ -23,8 +23,7 @@ void sas_set_size(size_t s){
 }
 
 //internal function that allocates memory with mmap
-void *sas_init(void){
-
+void *sas_init(void){ 
   if(start != NULL){
     fprintf(stderr, "MEMORY ERROR: 'double sas_init()\n");
     _exit(1);
@@ -43,7 +42,10 @@ void *sas_init(void){
 
 
 //returns valid heap address that has space for 1 instance of the struct
-void *sas_alloc(void){
+void *sas_alloc(void){  
+   if(S_SIZE == 0)
+     return NULL;
+   
   if(start == NULL)
     start = sas_init();
   
@@ -63,6 +65,9 @@ void *sas_alloc(void){
 }
 
 void sas_free(void *ptr){
+   if(S_SIZE == 0)
+     _exit(1);
+   
   if(ptr > tail || ptr < start || (ptr-start) % S_SIZE != 0){
     errno = EFAULT;
     perror("sas_free error");
