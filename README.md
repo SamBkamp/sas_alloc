@@ -6,11 +6,11 @@ This allocator is built on the mmap() syscall and *not* on malloc(), bypassing a
 
 ## function reference:
 
-`void sas_set_size(size_t s)` This sets the size of the struct/type being used. This **must** be called before using any other functions or it won't work.
+`void sas_set_size(size_t s)` This sets the size of the struct/type being used. This **must** be called before using any other functions or it won't work. s > 0 and will crash if an invalid error is passed
 
-`void *sas_alloc()` This function returns a pointer to a space on the heap of size `s` declared above
+`void *sas_alloc()` This function returns a pointer to a space on the heap of size `s` declared above. Returns a pointer to memory area on success, on failure returns null and errno is set
 
-`void sas_free(void *ptr)` This function frees memory allocated earlier by sas_alloc
+`void sas_free(void *ptr)` This function frees memory allocated earlier by sas_alloc. will crash if invalid pointer is passed to this function
 
 ## sas_alloc.c vs neo_sas_alloc.c
 
