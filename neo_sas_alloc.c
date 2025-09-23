@@ -109,6 +109,6 @@ void sas_free(void *ptr){
    if((void *)last_free > ptr-sizeof(chunk_struct))
      //if the last_free location is larger than the pointer given to us, replace last_free with that location so we always store the earliest address
      last_free = (chunk_struct *)(ptr-sizeof(chunk_struct));
-   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags = FLAGS_MSB_MASK; //mark chunk as free by making msb 0
+   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags |= FLAGS_MSB_MASK; //mark chunk as free by making msb 0
 
 }
