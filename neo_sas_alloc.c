@@ -7,6 +7,9 @@
 //TODO: change this a variable that gets dynamically updated on sas_init using sysconf(_SC_PAGESIZE)
 #define PAGE_SIZE 4096
 
+#define FLAGS_MSB_MASK 0x80
+
+
 /*
 layout of a memory chunk:
 
@@ -18,7 +21,8 @@ layout of a memory chunk:
      └───────────────┴─────────────────────────────────────────┘
 */
 typedef struct{
-  signed short flags;
+  unsigned short flags;
+  //MSB of flags is set/free flag (1/0 respectively) and remaining bits are size of chunk
 }chunk_struct;
 
 size_t S_SIZE = 0;
@@ -71,17 +75,17 @@ void *sas_alloc(void){
       perror("sas_alloc error");
       _exit(1);
     }
-    tail->flags = 1;//flag determines how big the chunk is (in S_SIZE multiples)
+    tail->flags = 1 | FLAGS_MSB_MASK;//flag determines how big the chunk is (in S_SIZE multiples) + MSB set to 1
     void *result = (void *)tail + sizeof(chunk_struct);//result (caller-writeable address) is space after metadata used by lib
     tail = (void *)tail + S_SIZE + sizeof(chunk_struct); //advance tail by one allocation chunk (programmer writeable area + lib metadata spacew)
     last_free = tail;
     return (void *)result;
   }else{
-    last_free->flags = 1;//set last free chunk with flag that determines how big the chunk is (in S_SIZE multiples)
+    last_free->flags = 1 | FLAGS_MSB_MASK;//set last free chunk with flag that determines how big the chunk is (in S_SIZE multiples) + MSB set to 1
     void *result = (void *)last_free;//set return value to last freed  chunk
     void *new_last_free = result;//set our new last free to our current last free (which is the lowest last_free address in the heap)
-    //walk forward through the heep chunks until it reaches a chunk with flags set to -1 (indicating free chunk) or it reaches the tail
-    while(new_last_free < (void *)tail && ((chunk_struct *)new_last_free)->flags != -1){
+    //walk forward through the heep chunks until it reaches a chunk with flags MSB set to 0 (indicating free chunk) or it reaches the tail
+    while(new_last_free < (void *)tail && ((chunk_struct *)new_last_free)->flags > FLAGS_MSB_MASK){
       new_last_free += (S_SIZE + sizeof(chunk_struct));//S_SIZE + sizeof(chunk_struct) is size of one alloc 
     }
     last_free = new_last_free;
@@ -105,6 +109,6 @@ void sas_free(void *ptr){
    if((void *)last_free > ptr-sizeof(chunk_struct))
      //if the last_free location is larger than the pointer given to us, replace last_free with that location so we always store the earliest address
      last_free = (chunk_struct *)(ptr-sizeof(chunk_struct));
-   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags = -1; //mark chunk as free with -1
+   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags = FLAGS_MSB_MASK; //mark chunk as free by making msb 0
 
 }
