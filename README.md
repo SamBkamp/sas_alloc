@@ -16,6 +16,8 @@ This allocator is built on the mmap() syscall and *not* on malloc(), bypassing a
 
 These are two different implementations of my allocation program. They use the same header file and the same function reference but they are slightly different. `sas_alloc` should be faster but takes up much more memory (nearly twice as much) while `neo_sas_alloc` has more computational overhead but is much more memory optimised (2 bytes (or however big your `short`s are) for every allocated block of memory)
 
+**do not use the original sas_alloc, in fact don't use either of them for anything production level but if youre going to use something use neo_sas_alloc**
+
 ## How it works
 
 this memory allocator is build on mmap. It has 5 global variables it uses to maintain the heap: `chunk_struct`, `S_SIZE`, `start`, `tail` and `last_free`.
