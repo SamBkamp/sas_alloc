@@ -41,56 +41,99 @@ void sas_set_size(size_t s){
   }
 }
 
-//internal function that allocates memory with mmap
+
+//function that checks if ptr is a valid free location by walking the heap from various heap locations
+char is_addr_valid_free(void *ptr){
+  char *initial_location = (char *)start; //TODO: create checks to see if other locations (last_free or tail) are closer to ptr to decrease search time
+
+  while(initial_location < (char *)ptr && ptr < (void *)tail){
+    unsigned short c_len = ((chunk_struct *)initial_location)->flags & 0x7f; //removes MSB  regardless of what it is
+    initial_location += sizeof(chunk_struct) + (c_len * S_SIZE);
+  }
+  
+  if(initial_location == (char *)ptr){
+    return 0;
+  }
+  return 1;
+    
+}
+
+
+//internal function that allocates memory with mmap. Crashes if sas_init is called twice or mmap returns an error code. Otherwise returns pointer to start of heap memory
+//TODO: make function return gracefull to sas_alloc and deal with errors there
 void *sas_init(void){ 
   if(start != NULL){
     fprintf(stderr, "MEMORY ERROR: 'double sas_init()\n");
     _exit(1);
   }  
-  void *s = mmap(NULL, PAGE_SIZE, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANON, -1, 0);
+  chunk_struct *s = mmap(NULL, PAGE_SIZE, PROT_WRITE|PROT_READ, MAP_PRIVATE|MAP_ANON, -1, 0);
 
   if(s == MAP_FAILED){
     perror("sas_init error");
     _exit(1);
   }
-  start = s;
-  tail = s;
-  last_free[last_free_index] = s;
+  start = tail = last_free = s;
   return s;
 }
 
 
-//returns valid heap address that has space for 1 instance of the struct
-void *sas_alloc(void){  
-   if(S_SIZE == 0)
+//returns valid heap address that has space for 1 instance of the struct. Returns NULL if S_SIZE is unititalised and crashes if OOM. Otherwise returns point to start of memory location useable by the caller
+void *sas_alloc(size_t s){  
+  if(S_SIZE == 0) //checks if S_SIZE is initialised
      return NULL;
    
-  if(start == NULL)
-    start = sas_init();
+  if(start == NULL) //checks if heap is initialised
+    start = sas_init(); //if not, init heap
   
-  if(tail == last_free[last_free_index]){
-    if(tail == (start+PAGE_SIZE)-S_SIZE){
+  if(tail == last_free){//check if tail is at the tail of allocated chunks
+    if(tail == (start+PAGE_SIZE)-(S_SIZE+sizeof(chunk_struct))){//check if tail has enough space after it to store another allocation
+      //start+PAGE_SIZE gets final valid address, S_SIZE+sizeof(chunk_struct) gets size of one alloc space. Therefore: final_valid_address - one_allocation_space is the last valid address to allocate a chunk too without overflowing
       errno = ENOMEM;
       perror("sas_alloc error");
       _exit(1);
     }
-    void *result = tail;
-    tail += S_SIZE;
-    last_free[last_free_index] = tail;
-    return result;
+    tail->flags = s | FLAGS_MSB_MASK;//flag determines how big the chunk is (in S_SIZE multiples) + MSB set to 1
+    void *result = (void *)tail + sizeof(chunk_struct);//result (caller-writeable address) is space after metadata used by lib
+    tail = (void *)tail + (S_SIZE*s) + sizeof(chunk_struct); //advance tail by one allocation chunk (programmer writeable area + lib metadata space)
+    last_free = tail;
+    return (void *)result;
   }else{
-    return last_free[last_free_index--];
+
+    chunk_struct *working_area = last_free;
+    
+    if(last_free->flags < s)
+      working_area = tail; //TODO: implement walk to check other free areas before defaulting to tail
+    
+    working_area->flags = s | FLAGS_MSB_MASK;//set last free chunk with flag that determines how big the chunk is (in S_SIZE multiples) + MSB set to 1
+    void *result = (void *)working_area;//set return value to last freed  chunk
+    void *new_last_free = result;//set our new last free to our current last free (which is the lowest last_free address in the heap)
+    //walk forward through the heep chunks until it reaches a chunk with flags MSB set to 0 (indicating free chunk) or it reaches the tail
+    if(last_free->flags >= s){
+      while(new_last_free < (void *)tail && ((chunk_struct *)new_last_free)->flags > FLAGS_MSB_MASK){
+	new_last_free += (S_SIZE + sizeof(chunk_struct));//S_SIZE + sizeof(chunk_struct) is size of one alloc 
+      }
+      last_free = new_last_free;
+    }
+    return result+sizeof(chunk_struct); //offset our return value to point to after our metadata
   }
 }
 
+//frees heap chunk at ptr. If S_SIZE is not set or if ptr is invalid, crashes. Otherwise frees memory 
 void sas_free(void *ptr){
    if(S_SIZE == 0)
      _exit(1);
    
-  if(ptr > tail || ptr < start || (ptr-start) % S_SIZE != 0){
-    errno = EFAULT;
-    perror("sas_free error");
-    _exit(1);
-  }
-  last_free[++last_free_index] = ptr;
+   if(ptr > (void *)tail || //ptr can't be larger than largest allocated chunk
+      ptr < (void *)start || //ptr can't be smaller than the start of the heap address
+      is_addr_valid_free(ptr-sizeof(chunk_struct)) != 0){//ptr offset from start needs to be a multiple of the size of our metadata+allocated space to be valid, tautalogically
+     //ptr-sizeof(chunk_struct) gets the address of the start of the memory chunk, minus start gets the offset from the beginning of the allocated heap. S_SIZE+sizeof(chunk_struct) gets the total size of a memory chunk
+     errno = EFAULT;
+     perror("sas_free error");
+     _exit(1);
+   }
+   if((void *)last_free > ptr-sizeof(chunk_struct))
+     //if the last_free location is larger than the pointer given to us, replace last_free with that location so we always store the earliest address
+     last_free = (chunk_struct *)(ptr-sizeof(chunk_struct));
+   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags |= FLAGS_MSB_MASK; //mark chunk as free by making msb 0
+
 }

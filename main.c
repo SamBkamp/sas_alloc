@@ -10,20 +10,36 @@ typedef struct{
 
 int main(){
   sas_set_size(sizeof(test_struct));
-  test_struct *m = sas_alloc();
-  test_struct *n = sas_alloc();
+
+  test_struct *b = sas_alloc(2);
+  test_struct *t = sas_alloc(2);
+  printf("%p\n", b);
+  printf("%p\n", t);
+  test_struct *m = sas_alloc(1);
+  test_struct *n = sas_alloc(1);
+  printf("%p\n", m);
+  printf("%p\n", n);
+  sas_free(t);
+  test_struct *y = sas_alloc(1);
+  printf("%p\n", y);
+
+
+  /*
+  test_struct *m = sas_alloc(1);
+  test_struct *n = sas_alloc(1);
   printf("%p\n", m);
   printf("%p\n\n", n);
   sas_free(m);
   sas_free(n);
-  test_struct *b = sas_alloc();
-  test_struct *t = sas_alloc();
-  test_struct *l = sas_alloc();
+  test_struct *b = sas_alloc(1);
+  test_struct *t = sas_alloc(1);
+  test_struct *l = sas_alloc(1);
   printf("%p\n", b);
   printf("%p\n", t);
   printf("%p\n\n", l);
   sas_free(t);
-  test_struct *o = sas_alloc();
+  test_struct *o = sas_alloc(1);
   printf("%p\n", o);
+  */
 }
 
