@@ -20,8 +20,11 @@ int main(){
   printf("%p\n", m);
   printf("%p\n", n);
   sas_free(t);
-  test_struct *y = sas_alloc(1);
-  printf("%p\n", y);
+  test_struct *d = sas_alloc(2);
+  test_struct *l = sas_alloc(1);
+  printf("%p\n", d);
+  printf("%p\n", l);
+ 
 
 
   /*

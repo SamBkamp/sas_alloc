@@ -78,7 +78,9 @@ void *sas_init(void){
 
 
 //returns valid heap address that has space for 1 instance of the struct. Returns NULL if S_SIZE is unititalised and crashes if OOM. Otherwise returns point to start of memory location useable by the caller
-void *sas_alloc(size_t s){  
+void *sas_alloc(size_t s){
+  //TODO: implement checks on s
+  
   if(S_SIZE == 0) //checks if S_SIZE is initialised
      return NULL;
    
@@ -96,24 +98,24 @@ void *sas_alloc(size_t s){
     void *result = (void *)tail + sizeof(chunk_struct);//result (caller-writeable address) is space after metadata used by lib
     tail = (void *)tail + (S_SIZE*s) + sizeof(chunk_struct); //advance tail by one allocation chunk (programmer writeable area + lib metadata space)
     last_free = tail;
+    tail->flags = 0;
     return (void *)result;
   }else{
-
-    chunk_struct *working_area = last_free;
+    void *result = last_free;
     
-    if(last_free->flags < s)
-      working_area = tail; //TODO: implement walk to check other free areas before defaulting to tail
-    
-    working_area->flags = s | FLAGS_MSB_MASK;//set last free chunk with flag that determines how big the chunk is (in S_SIZE multiples) + MSB set to 1
-    void *result = (void *)working_area;//set return value to last freed  chunk
-    void *new_last_free = result;//set our new last free to our current last free (which is the lowest last_free address in the heap)
-    //walk forward through the heep chunks until it reaches a chunk with flags MSB set to 0 (indicating free chunk) or it reaches the tail
-    if(last_free->flags >= s){
+    if(last_free->flags == s){//best fit (exact fit)
+      void *new_last_free = (void *)last_free + (last_free->flags*S_SIZE) + sizeof(chunk_struct);//set our new last free to our current last free (which is the lowest last_free address in the heap)
       while(new_last_free < (void *)tail && ((chunk_struct *)new_last_free)->flags > FLAGS_MSB_MASK){
 	new_last_free += (S_SIZE + sizeof(chunk_struct));//S_SIZE + sizeof(chunk_struct) is size of one alloc 
       }
       last_free = new_last_free;
+    }else{
+      result = tail; //TODO: walk the heap until it finds a empty fragment of best fit before defaulting to tail
+      tail = (void *)tail + (S_SIZE*s) + sizeof(chunk_struct); //advance tail by one allocation chunk (programmer writeable area + lib metadata space)
+      tail->flags = 0;
     }
+
+    ((chunk_struct *)result)->flags = s | FLAGS_MSB_MASK;//set last free chunk with flag that determines how big the chunk is (in S_SIZE multiples) + MSB set to 1
     return result+sizeof(chunk_struct); //offset our return value to point to after our metadata
   }
 }
@@ -134,6 +136,6 @@ void sas_free(void *ptr){
    if((void *)last_free > ptr-sizeof(chunk_struct))
      //if the last_free location is larger than the pointer given to us, replace last_free with that location so we always store the earliest address
      last_free = (chunk_struct *)(ptr-sizeof(chunk_struct));
-   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags |= FLAGS_MSB_MASK; //mark chunk as free by making msb 0
+   ((chunk_struct *)(ptr-sizeof(chunk_struct)))->flags &= FLAGS_MSB_MASK-1; //mark chunk as free by making msb 0
 
 }
