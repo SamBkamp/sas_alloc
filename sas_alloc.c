@@ -4,14 +4,33 @@
 #include <unistd.h>
 #include "sas_alloc.h"
 
+//TODO: change this a variable that gets dynamically updated on sas_init using sysconf(_SC_PAGESIZE)
 #define PAGE_SIZE 4096
 
-size_t S_SIZE = 0;
-void *start = NULL;
-void *tail;
-void *last_free[PAGE_SIZE]; //TODO: Find a more memory efficient way to do this
-unsigned short last_free_index = 0;
+#define FLAGS_MSB_MASK 0x80
 
+
+/*
+layout of a memory chunk:
+
+     ┌───────────────┬─────────────────────────────────────────┐
+     ▼ chunk_struct  ▼                  S_SIZE                 ▼
+
+     ┌───────────────┬─────────────────────────────────────────┐
+     │  metadata     │            useable memory               │
+     └───────────────┴─────────────────────────────────────────┘
+*/
+typedef struct{
+  unsigned short flags;
+  //MSB of flags is set/free flag (1/0 respectively) and remaining bits are size of chunk
+}chunk_struct;
+
+size_t S_SIZE = 0;
+chunk_struct *start = NULL;
+chunk_struct *tail, *last_free; 
+
+//sas_set_size sets the inital size of the fixed chunks allocated. Takes a size_t argument. Crashes when value is invalid
+//TODO: fix invalid argument behaviour to deal with EINVAL gracefully
 void sas_set_size(size_t s){
   if(s <= 0 || S_SIZE != 0){
     errno = EINVAL;

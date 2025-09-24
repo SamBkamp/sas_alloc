@@ -2,7 +2,7 @@
 #define SAS_ALLOC
 
 void sas_set_size(size_t s);
-void *sas_alloc(void);
+void *sas_alloc(size_t s);
 void sas_free(void *ptr);
 
 #endif
