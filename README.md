@@ -8,15 +8,9 @@ This allocator is built on the mmap() syscall and *not* on malloc(), bypassing a
 
 `void sas_set_size(size_t s)` This sets the size of the struct/type being used. This **must** be called before using any other functions or it won't work. s > 0 and will crash if an invalid error is passed
 
-`void *sas_alloc()` This function returns a pointer to a space on the heap of size `s` declared above. Returns a pointer to memory area on success, on failure returns null and errno is set
+`void *sas_alloc(size_t s)` This function returns a pointer to a space on the heap of `s` times the size specified in `sas_set_size()`. Returns a pointer to memory area on success, on failure returns null and errno is set
 
 `void sas_free(void *ptr)` This function frees memory allocated earlier by sas_alloc. will crash if invalid pointer is passed to this function
-
-## sas_alloc.c vs neo_sas_alloc.c
-
-These are two different implementations of my allocation program. They use the same header file and the same function reference but they are slightly different. `sas_alloc` should be faster but takes up much more memory (nearly twice as much) while `neo_sas_alloc` has more computational overhead but is much more memory optimised (2 bytes (or however big your `short`s are) for every allocated block of memory)
-
-**do not use the original sas_alloc, in fact don't use either of them for anything production level but if youre going to use something use neo_sas_alloc**
 
 ## How it works
 
@@ -35,7 +29,7 @@ the memory layout for a whole chunk (chunk_struct + allocated memory) looks like
      └───────────────┴─────────────────────────────────────────┘
 ```
 
-When `sas_alloc()` is called, it checks if `last_free` and `tail` are equal, if thats the case then there are no free chunks in the heap, so `tail` (and `last_free`) is returned and bumped forward one chunk size (chunk_struct + S_SIZE). If `last_free` and `tail` aren't equal, `last_free` is returned, then the program walks over the heap memory in units of chunk_struct+S_SIZE until it finds the next free block (information which is kept in metadata) or it reaches the tail. This is then the new last_free location. This has a best case complexity of O(1) and a worst case of O(n) where N is <= (tail-start)/chunk_struct+ssize (so generally pretty small) 
+When `sas_alloc()` is called, it checks if last_free and tail are equal, if thats the case then there are no free chunks in the heap, so tail (and last_free) is returned and bumped forward one chunk size (chunk_struct + S_SIZE). If last_free and tail aren't equal, last_free is returned, then the program walks over the heap memory in units of chunk_struct+S_SIZE until it finds the next free block (information which is kept in metadata) or it reaches the tail. This is then the new last_free location. This has a best case complexity of O(1) and a worst case of O(n) where N is <= (tail-start)/chunk_struct+ssize (so generally pretty small) 
 
 `sas_free(void *ptr)` is used to free the pointer at ptr. The function marks the chunk as free in the metadata and checks if the ptr is less than the current last_free. This is done so last_free always points to the earliest free location in the heap. This means the free locations work on a FIFO basis and the earliest locations are filled first. It also needs to be the earliest location so the walk forward in `sas_alloc()` doesn't miss any memory location leading to permanent fragmentation and memory leaks. This runs in O(1).
 
