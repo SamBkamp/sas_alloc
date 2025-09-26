@@ -102,17 +102,27 @@ void *sas_alloc(size_t s){
     return (void *)result;
   }else{
     void *result = last_free;
+    void *new_last_free = (void *)last_free + (last_free->flags*S_SIZE) + sizeof(chunk_struct);//set our new last free to our current last free (which is the lowest last_free address in the heap)
     
     if(last_free->flags == s){//best fit (exact fit)
-      void *new_last_free = (void *)last_free + (last_free->flags*S_SIZE) + sizeof(chunk_struct);//set our new last free to our current last free (which is the lowest last_free address in the heap)
+
       while(new_last_free < (void *)tail && ((chunk_struct *)new_last_free)->flags > FLAGS_MSB_MASK){
 	new_last_free += (S_SIZE + sizeof(chunk_struct));//S_SIZE + sizeof(chunk_struct) is size of one alloc 
       }
       last_free = new_last_free;
     }else{
-      result = tail; //TODO: walk the heap until it finds a empty fragment of best fit before defaulting to tail
-      tail = (void *)tail + (S_SIZE*s) + sizeof(chunk_struct); //advance tail by one allocation chunk (programmer writeable area + lib metadata space)
-      tail->flags = 0;
+      //the result of this walk should be one that is not over tail (or is tail), free, and same size as s
+      while(new_last_free < (void *)tail //if not reached the end of the thus-allocated area
+	    && ((chunk_struct *)new_last_free)->flags > FLAGS_MSB_MASK //if its not free
+	    && ((chunk_struct *)new_last_free)->flags & (FLAGS_MSB_MASK -1) != s){ //if its not the same size as s
+	new_last_free += (S_SIZE + sizeof(chunk_struct));//walk one more
+      }
+
+      if(new_last_free == tail){
+	tail = (void *)tail + (S_SIZE*s) + sizeof(chunk_struct); //advance tail by one allocation chunk (programmer writeable area + lib metadata space)
+	tail->flags = 0;
+      }
+      result = new_last_free;
     }
 
     ((chunk_struct *)result)->flags = s | FLAGS_MSB_MASK;//set last free chunk with flag that determines how big the chunk is (in S_SIZE multiples) + MSB set to 1
